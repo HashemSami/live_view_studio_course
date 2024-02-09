@@ -16,8 +16,9 @@ defmodule LiveViewStudioWeb.BoatsLive do
   def render(assigns) do
     ~H"""
     <h1>Daily Boat Rentals</h1>
+
     <div id="boats">
-      <form>
+      <form phx-change="filter">
         <div class="filters">
           <select name="type">
             <%= Phoenix.HTML.Form.options_for_select(
@@ -25,6 +26,7 @@ defmodule LiveViewStudioWeb.BoatsLive do
               @filter.type
             ) %>
           </select>
+          
           <div class="prices">
             <%= for price <- ["$", "$$", "$$$"] do %>
               <input
@@ -33,13 +35,13 @@ defmodule LiveViewStudioWeb.BoatsLive do
                 value={price}
                 id={price}
                 checked={price in @filter.prices}
-              />
-              <label for={price}><%= price %></label>
+              /> <label for={price}><%= price %></label>
             <% end %>
-            <input type="hidden" name="prices[]" value="" />
+             <input type="hidden" name="prices[]" value="" />
           </div>
         </div>
       </form>
+      
       <div class="boats">
         <div :for={boat <- @boats} class="boat">
           <img src={boat.image} />
@@ -47,10 +49,12 @@ defmodule LiveViewStudioWeb.BoatsLive do
             <div class="model">
               <%= boat.model %>
             </div>
+            
             <div class="details">
               <span class="price">
                 <%= boat.price %>
               </span>
+              
               <span class="type">
                 <%= boat.type %>
               </span>
@@ -60,6 +64,12 @@ defmodule LiveViewStudioWeb.BoatsLive do
       </div>
     </div>
     """
+  end
+
+  def handle_event("filter", %{"type" => type, "prices" => prices}, socket) do
+    filter = %{type: type, prices: [prices]}
+    boats = Boats.list_boats(filter)
+    {:noreply, assign(socket, boats: boats)}
   end
 
   defp type_options do

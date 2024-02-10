@@ -18,6 +18,7 @@ defmodule LiveViewStudioWeb.VehiclesLive do
   def render(assigns) do
     ~H"""
     <h1>🚙 Find a Vehicle 🚘</h1>
+
     <div id="vehicles">
       <form phx-submit="cars" phx-change="suggest">
         <input
@@ -30,29 +31,28 @@ defmodule LiveViewStudioWeb.VehiclesLive do
           autocomplete="off"
           phx-debounce="1000"
         />
-
         <button>
           <img src="/images/search.svg" />
         </button>
       </form>
-
+      
       <datalist id="matches">
         <option :for={name <- @matches} value={name}>
           <%= name %>
         </option>
       </datalist>
-
-      <div :if={@loading} class="loader">Loading...</div>
-
+       <.loading_indicator loading={@loading} />
       <div class="vehicles">
         <ul>
           <li :for={vehicle <- @vehicles}>
             <span class="make-model">
               <%= vehicle.make_model %>
             </span>
+            
             <span class="color">
               <%= vehicle.color %>
             </span>
+            
             <span class={"status #{vehicle.status}"}>
               <%= vehicle.status %>
             </span>

@@ -10,7 +10,13 @@ defmodule LiveViewStudioWeb.BoatsLive do
         boats: Boats.list_boats()
       )
 
-    {:ok, socket}
+    # {:ok, socket}
+    {:ok, socket, temporary_assigns: [boats: []]}
+    # temporary_assigns will reset the boats list to an empty list
+    # each time it renders the data to the user to free up the memory
+    # in the process instead of cache the list
+    # we use it when we fetch any static data from the database
+    # to render it to the user
   end
 
   def render(assigns) do
@@ -67,9 +73,13 @@ defmodule LiveViewStudioWeb.BoatsLive do
   end
 
   def handle_event("filter", %{"type" => type, "prices" => prices}, socket) do
-    filter = %{type: type, prices: [prices]}
+    filter = %{type: type, prices: prices}
     boats = Boats.list_boats(filter)
-    {:noreply, assign(socket, boats: boats)}
+
+    IO.inspect(length(socket.assigns.boats), label: "Assigned boats")
+    IO.inspect(length(boats), label: "Filtered boats")
+
+    {:noreply, assign(socket, boats: boats, filter: filter)}
   end
 
   defp type_options do

@@ -16,6 +16,8 @@ defmodule LiveViewStudioWeb.ServersLive do
     {:ok, socket}
   end
 
+  # handle_params always invoked after the mount function
+  # then it will be invoked every time the url changes
   def handle_params(%{"id" => id}, _uri, socket) do
     IO.inspect(self(), label: "PARAMS ID = #{id}")
 
@@ -43,7 +45,7 @@ defmodule LiveViewStudioWeb.ServersLive do
         <div class="nav">
           <.link
             :for={server <- @servers}
-            patch={~p"/servers?#{[id: server.id]}"}
+            patch={~p"/servers/#{server.id}"}
             class={if server == @selected_server, do: "selected"}
           >
             <span class={server.status}></span> <%= server.name %>
@@ -59,44 +61,51 @@ defmodule LiveViewStudioWeb.ServersLive do
       
       <div class="main">
         <div class="wrapper">
-          <div class="server">
-            <div class="header">
-              <h2><%= @selected_server.name %></h2>
-              
-              <span class={@selected_server.status}>
-                <%= @selected_server.status %>
-              </span>
-            </div>
-            
-            <div class="body">
-              <div class="row">
-                <span>
-                  <%= @selected_server.deploy_count %> deploys
-                </span>
-                
-                <span>
-                  <%= @selected_server.size %> MB
-                </span>
-                
-                <span>
-                  <%= @selected_server.framework %>
-                </span>
-              </div>
-              
-              <h3>Last Commit Message:</h3>
-              
-              <blockquote>
-                <%= @selected_server.last_commit_message %>
-              </blockquote>
-            </div>
-          </div>
-          
+          <.server selected_server={@selected_server} />
           <div class="links">
             <.link navigate={~p"/light"}>
               Adjust Light
             </.link>
           </div>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :selected_server, Servers.Server, required: true
+
+  def server(assigns) do
+    ~H"""
+    <div class="server">
+      <div class="header">
+        <h2><%= @selected_server.name %></h2>
+        
+        <span class={@selected_server.status}>
+          <%= @selected_server.status %>
+        </span>
+      </div>
+      
+      <div class="body">
+        <div class="row">
+          <span>
+            <%= @selected_server.deploy_count %> deploys
+          </span>
+          
+          <span>
+            <%= @selected_server.size %> MB
+          </span>
+          
+          <span>
+            <%= @selected_server.framework %>
+          </span>
+        </div>
+        
+        <h3>Last Commit Message:</h3>
+        
+        <blockquote>
+          <%= @selected_server.last_commit_message %>
+        </blockquote>
       </div>
     </div>
     """

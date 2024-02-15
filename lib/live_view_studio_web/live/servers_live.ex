@@ -2,14 +2,20 @@ defmodule LiveViewStudioWeb.ServersLive do
   use LiveViewStudioWeb, :live_view
 
   alias LiveViewStudio.Servers
+  alias LiveViewStudio.Servers.Server
 
   def mount(_params, _session, socket) do
     IO.inspect(self(), label: "MOUNT")
     servers = Servers.list_servers()
 
+    changeset = Servers.change_server(%Server{})
+
+    form = to_form(changeset)
+
     socket =
       assign(socket,
         servers: servers,
+        form: form,
         coffees: 0
       )
 
@@ -58,6 +64,34 @@ defmodule LiveViewStudioWeb.ServersLive do
           </button>
         </div>
       </div>
+      
+      <.form for={@form} phx-submit="save">
+        <.input field={@form[:name]} placeholder="Name" autocomplete="off" />
+        <.input
+          field={@form[:status]}
+          placeholder="Status"
+          autocomplete="off"
+        />
+        <.input
+          field={@form[:deploy_count]}
+          placeholder="Deploy count"
+          autocomplete="off"
+        />
+        <.input field={@form[:size]} placeholder="Size" autocomplete="off" />
+        <.input
+          field={@form[:framework]}
+          placeholder="Framework"
+          autocomplete="off"
+        />
+        <.input
+          field={@form[:last_commit_message]}
+          placeholder="Last commit message"
+          autocomplete="off"
+        />
+        <.button phx-disable-with="Saving...">
+          Check In
+        </.button>
+      </.form>
       
       <div class="main">
         <div class="wrapper">
@@ -115,5 +149,9 @@ defmodule LiveViewStudioWeb.ServersLive do
     IO.inspect(self(), label: "HANDLE DRINK EVENT")
 
     {:noreply, update(socket, :coffees, &(&1 + 1))}
+  end
+
+  def handle_event("save", %{"server" => server_params}, socket) do
+    IO.inspect(server_params, label: "server_params")
   end
 end

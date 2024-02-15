@@ -19,6 +19,20 @@ defmodule LiveViewStudioWeb.BoatsLive do
     # to render it to the user
   end
 
+  def handle_params(params, _uri, socket) do
+    type = validate_type_param(params)
+    prices = validate_prices_param(params)
+
+    filter = %{
+      type: type,
+      prices: prices
+    }
+
+    boats = Boats.list_boats(filter)
+
+    {:noreply, assign(socket, boats: boats, filter: filter)}
+  end
+
   def render(assigns) do
     ~H"""
     <h1>Daily Boat Rentals</h1>
@@ -108,6 +122,8 @@ defmodule LiveViewStudioWeb.BoatsLive do
     IO.inspect(length(socket.assigns.boats), label: "Assigned boats")
     IO.inspect(length(boats), label: "Filtered boats")
 
+    socket = push_patch(socket, to: ~p"/boats?#{filter}")
+
     {:noreply, assign(socket, boats: boats, filter: filter)}
   end
 
@@ -119,4 +135,18 @@ defmodule LiveViewStudioWeb.BoatsLive do
       Sailing: "sailing"
     ]
   end
+
+  defp validate_type_param(%{"type" => type})
+       when type in ~w(fishing sporting sailing) do
+    type
+  end
+
+  defp validate_type_param(_), do: ""
+
+  defp validate_prices_param(%{"prices" => prices}) do
+    IO.inspect(prices, label: "prices param")
+    prices
+  end
+
+  defp validate_prices_param(_), do: [""]
 end

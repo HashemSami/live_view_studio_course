@@ -68,9 +68,22 @@
           Previous
         </.link>
         
-        <.link patch={
-          ~p"/donations?#{%{@options | page: @options.page + 1}}"
-        }>
+        <.link
+          :for={
+            {page, current_page?} <- pages(@options, @donation_count)
+          }
+          patch={~p"/donations?#{%{@options | page: page}}"}
+          class={if current_page?, do: "active"}
+        >
+          <%= page %>
+        </.link>
+        
+        <.link
+          :if={next_page?(@options, @donation_count)}
+          patch={
+            ~p"/donations?#{%{@options | page: @options.page + 1}}"
+          }
+        >
           Next
         </.link>
       </div>

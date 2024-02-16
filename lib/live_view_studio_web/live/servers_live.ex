@@ -55,9 +55,13 @@ defmodule LiveViewStudioWeb.ServersLive do
       <div class="header">
         <h2><%= @selected_server.name %></h2>
         
-        <span class={@selected_server.status}>
+        <button
+          class={@selected_server.status}
+          phx-click="toggle-status"
+          phx-value-id={@selected_server.id}
+        >
           <%= @selected_server.status %>
-        </span>
+        </button>
       </div>
       
       <div class="body">
@@ -85,6 +89,23 @@ defmodule LiveViewStudioWeb.ServersLive do
     """
   end
 
+  def handle_event("toggle-status", %{"id" => id}, socket) do
+    server = Servers.get_server!(id)
+
+    {:ok, server} =
+      Servers.toggle_status_server(server)
+
+    servers =
+      socket.assigns.servers
+      |> Enum.map(fn s ->
+        if s.id == server.id,
+          do: Map.put(s, :status, server.status),
+          else: s
+      end)
+
+    {:noreply, assign(socket, servers: servers, selected_server: server)}
+  end
+
   def handle_event("drink", _, socket) do
     IO.inspect(self(), label: "HANDLE DRINK EVENT")
 
@@ -106,6 +127,15 @@ defmodule LiveViewStudioWeb.ServersLive do
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
     end
+  end
+
+  def handle_event("validate", %{"server" => server_params}, socket) do
+    changeset =
+      %Server{}
+      |> Servers.change_server(server_params)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, form: to_form(changeset))}
   end
 
   def handle_info("clear_flash", socket) do

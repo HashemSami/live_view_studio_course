@@ -8,14 +8,9 @@ defmodule LiveViewStudioWeb.ServersLive do
     IO.inspect(self(), label: "MOUNT")
     servers = Servers.list_servers()
 
-    changeset = Servers.change_server(%Server{})
-
-    form = to_form(changeset)
-
     socket =
       assign(socket,
         servers: servers,
-        form: form,
         coffees: 0
       )
 
@@ -35,76 +30,21 @@ defmodule LiveViewStudioWeb.ServersLive do
   def handle_params(_, _uri, socket) do
     IO.inspect(self(), label: "PARAMS CATCH ALL")
 
-    server = hd(socket.assigns.servers)
+    socket =
+      case socket.assigns.live_action == :new do
+        true ->
+          changeset = Servers.change_server(%Server{})
 
-    {:noreply, assign(socket, selected_server: server, page_title: server.name)}
-  end
+          form = to_form(changeset)
 
-  def render(assigns) do
-    IO.inspect(self(), label: "RENDER")
+          assign(socket, selected_server: nil, page_title: "new", form: form)
 
-    ~H"""
-    <h1>Servers</h1>
+        false ->
+          server = hd(socket.assigns.servers)
+          assign(socket, selected_server: server, page_title: server.name)
+      end
 
-    <div id="servers">
-      <div class="sidebar">
-        <div class="nav">
-          <.link
-            :for={server <- @servers}
-            patch={~p"/servers/#{server.id}"}
-            class={if server == @selected_server, do: "selected"}
-          >
-            <span class={server.status}></span> <%= server.name %>
-          </.link>
-        </div>
-        
-        <div class="coffees">
-          <button phx-click="drink">
-            <img src="/images/coffee.svg" /> <%= @coffees %>
-          </button>
-        </div>
-      </div>
-      
-      <.form for={@form} phx-submit="save">
-        <.input field={@form[:name]} placeholder="Name" autocomplete="off" />
-        <.input
-          field={@form[:status]}
-          placeholder="Status"
-          autocomplete="off"
-        />
-        <.input
-          field={@form[:deploy_count]}
-          placeholder="Deploy count"
-          autocomplete="off"
-        />
-        <.input field={@form[:size]} placeholder="Size" autocomplete="off" />
-        <.input
-          field={@form[:framework]}
-          placeholder="Framework"
-          autocomplete="off"
-        />
-        <.input
-          field={@form[:last_commit_message]}
-          placeholder="Last commit message"
-          autocomplete="off"
-        />
-        <.button phx-disable-with="Saving...">
-          Check In
-        </.button>
-      </.form>
-      
-      <div class="main">
-        <div class="wrapper">
-          <.server selected_server={@selected_server} />
-          <div class="links">
-            <.link navigate={~p"/light"}>
-              Adjust Light
-            </.link>
-          </div>
-        </div>
-      </div>
-    </div>
-    """
+    {:noreply, socket}
   end
 
   attr :selected_server, Servers.Server, required: true
@@ -153,5 +93,23 @@ defmodule LiveViewStudioWeb.ServersLive do
 
   def handle_event("save", %{"server" => server_params}, socket) do
     IO.inspect(server_params, label: "server_params")
+
+    case Servers.create_server(server_params) do
+      {:ok, server} ->
+        socket = update(socket, :servers, &[server | &1])
+        socket = put_flash(socket, :info, "Server Saved!")
+
+        send(self(), "clear_flash")
+
+        {:noreply, push_patch(socket, to: ~p"/servers/#{server.id}")}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
+  end
+
+  def handle_info("clear_flash", socket) do
+    :timer.sleep(3000)
+    {:noreply, clear_flash(socket, :info)}
   end
 end

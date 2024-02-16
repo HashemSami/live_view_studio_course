@@ -1,0 +1,74 @@
+<h1>Servers</h1>
+
+<div id="servers">
+  <div class="sidebar">
+    <div class="nav">
+      <.link patch={~p"/servers/new"} class="add">
+        + Add new server
+      </.link>
+      
+      <.link
+        :for={server <- @servers}
+        patch={~p"/servers/#{server.id}"}
+        class={if server == @selected_server, do: "selected"}
+      >
+        <span class={server.status}></span> <%= server.name %>
+      </.link>
+    </div>
+    
+    <div class="coffees">
+      <button phx-click="drink">
+        <img src="/images/coffee.svg" /> <%= @coffees %>
+      </button>
+    </div>
+  </div>
+  
+  <div class="main">
+    <div class="wrapper">
+      <%= if @live_action == :new do %>
+        <.form for={@form} phx-submit="save">
+          <div class="field">
+            <.input
+              field={@form[:name]}
+              placeholder="Name"
+              autocomplete="off"
+            />
+          </div>
+          
+          <div class="field">
+            <.input
+              field={@form[:framework]}
+              placeholder="Framework"
+              autocomplete="off"
+            />
+          </div>
+          
+          <div class="field">
+            <.input
+              field={@form[:size]}
+              placeholder="Size"
+              autocomplete="off"
+              type="number"
+            />
+          </div>
+          
+          <.button phx-disable-with="Saving...">
+            Submit
+          </.button>
+          
+          <.link patch={~p"/servers"} class="cancel">
+            Cancel
+          </.link>
+        </.form>
+      <% else %>
+        <.server selected_server={@selected_server} />
+      <% end %>
+      
+      <div class="links">
+        <.link navigate={~p"/light"}>
+          Adjust Light
+        </.link>
+      </div>
+    </div>
+  </div>
+</div>

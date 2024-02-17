@@ -15,9 +15,26 @@ defmodule LiveViewStudioWeb.VolunteerFormComponent do
     {:ok, assign(socket, :form, form)}
   end
 
+  # this is a special function for the live component
+  # that will be invoked after the mount component and
+  # before the render, this function will assign any data
+  # passed from the parent to the socket
+  def update(assigns, socket) do
+    socket =
+      socket
+      |> assign(assigns)
+      |> assign(:count, assigns.count + 1)
+
+    {:ok, socket}
+  end
+
   def render(assigns) do
     ~H"""
     <div>
+      <div class="count">
+        Go for it! You'll be volunteer #<%= @count %>
+      </div>
+      
       <.form
         for={@form}
         phx-submit="save"
@@ -46,12 +63,14 @@ defmodule LiveViewStudioWeb.VolunteerFormComponent do
 
   def handle_event("save", %{"volunteer" => volunteer_params}, socket) do
     case Volunteers.create_volunteer(volunteer_params) do
-      {:ok, volunteer} ->
+      {:ok, _volunteer} ->
         # we need to notify the parent live_view that the volunteer
         # has been created to render it, and since the live component
         # and live view run in the same process, we can send the data
         # to self() to handel the process in the parent live view
-        send(self(), {:volunteer_created, volunteer})
+        # NOTE: if the parent is subscribed to the volunteers when
+        # they are created, no need to send the message form here
+        # send(self(), {__MODULE__, :volunteer_created, volunteer})
 
         # IO.inspect(socket.assigns.streams.volunteers, label: "save")
 

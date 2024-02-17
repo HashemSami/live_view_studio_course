@@ -6,6 +6,10 @@ defmodule LiveViewStudioWeb.VolunteersLive do
   alias LiveViewStudioWeb.VolunteerFormComponent
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Volunteers.subscribe()
+    end
+
     volunteers = Volunteers.list_volunteers()
 
     socket =
@@ -26,7 +30,11 @@ defmodule LiveViewStudioWeb.VolunteersLive do
     <h1>Volunteer Check-In</h1>
 
     <div id="volunteer-checkin">
-      <.live_component module={VolunteerFormComponent} id={:new} /> <pre>
+      <.live_component
+        module={VolunteerFormComponent}
+        id={:new}
+        count={@count}
+      /> <pre>
       <%!-- <%= inspect(@form, pretty: true)%> --%>
     </pre>
       <div id="volunteers" phx-update="stream">
@@ -80,33 +88,51 @@ defmodule LiveViewStudioWeb.VolunteersLive do
   def handle_event("delete-volunteer", %{"id" => id}, socket) do
     volunteer = Volunteers.get_volunteer!(id)
 
-    {:ok, volunteer} =
+    {:ok, _volunteer} =
       Volunteers.delete_volunteer(volunteer)
 
-    socket = stream_delete(socket, :volunteers, volunteer)
+    IO.inspect(self(), label: "delete")
 
-    IO.inspect(socket.assigns.streams.volunteers, label: "delete")
     {:noreply, socket}
   end
 
   def handle_event("toggle-status", %{"id" => id}, socket) do
     volunteer = Volunteers.get_volunteer!(id)
 
-    {:ok, volunteer} =
+    {:ok, _volunteer} =
       Volunteers.toggle_status_volunteer(volunteer)
 
+    {:noreply, socket}
+  end
+
+  def handle_info({:volunteer_updated, volunteer}, socket) do
     socket = stream_insert(socket, :volunteers, volunteer)
     {:noreply, socket}
   end
 
-  def handle_info({:volunteer_created, volunteer}, socket) do
-    socket = stream_insert(socket, :volunteers, volunteer, at: 0)
-    socket = put_flash(socket, :info, "Volunteer checked in!")
+  def handle_info({:volunteer_deleted, volunteer}, socket) do
+    socket =
+      stream_delete(socket, :volunteers, volunteer)
+      |> update(:count, &max(&1 - 1, 0))
+
+    IO.inspect(self(), label: "delete handel")
+
+    {:noreply, socket}
+  end
+
+  def handle_info(
+        {:volunteer_created, volunteer},
+        socket
+      ) do
+    socket =
+      stream_insert(socket, :volunteers, volunteer, at: 0)
+      |> put_flash(:info, "Volunteer checked in!")
+      # increase the count by one
+      |> update(:count, &(&1 + 1))
+
     # clearing the info plash after 3 second
     send(self(), "clear_flash")
 
-    # increase the count by one
-    socket = update(socket, :count, &(&1 + 1))
     {:noreply, socket}
   end
 

@@ -6,6 +6,11 @@ defmodule LiveViewStudioWeb.ServersLive do
 
   def mount(_params, _session, socket) do
     IO.inspect(self(), label: "MOUNT")
+
+    if connected?(socket) do
+      Servers.subscribe()
+    end
+
     servers = Servers.list_servers()
 
     socket =
@@ -91,15 +96,7 @@ defmodule LiveViewStudioWeb.ServersLive do
     {:ok, server} =
       Servers.toggle_status_server(server)
 
-    servers =
-      socket.assigns.servers
-      |> Enum.map(fn s ->
-        if s.id == server.id,
-          do: Map.put(s, :status, server.status),
-          else: s
-      end)
-
-    {:noreply, assign(socket, servers: servers, selected_server: server)}
+    {:noreply, assign(socket, selected_server: server)}
   end
 
   def handle_event("drink", _, socket) do
@@ -115,7 +112,19 @@ defmodule LiveViewStudioWeb.ServersLive do
 
     send(self(), "clear_flash")
 
-    {:noreply, push_patch(socket, to: ~p"/servers/#{server.id}")}
+    {:noreply, socket}
+  end
+
+  def handle_info({:server_updated, server}, socket) do
+    servers =
+      socket.assigns.servers
+      |> Enum.map(fn s ->
+        if s.id == server.id,
+          do: Map.put(s, :status, server.status),
+          else: s
+      end)
+
+    {:noreply, assign(socket, servers: servers)}
   end
 
   def handle_info("clear_flash", socket) do

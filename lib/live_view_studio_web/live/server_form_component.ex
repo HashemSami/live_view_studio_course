@@ -63,9 +63,9 @@ defmodule LiveViewStudioWeb.ServerFormComponent do
 
     case Servers.create_server(server_params) do
       {:ok, server} ->
-        send(self(), {:server_created, server})
+        # send(self(), {:server_created, server})
 
-        {:noreply, socket}
+        {:noreply, push_patch(socket, to: ~p"/servers/#{server.id}")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}

@@ -52,6 +52,7 @@ defmodule LiveViewStudioWeb.VolunteerFormComponent do
           type="tel"
           placeholder="Phone"
           phx-debounce="blur"
+          phx-hook="ValidatePhone"
         />
         <.button phx-disable-with="Saving...">
           Check In

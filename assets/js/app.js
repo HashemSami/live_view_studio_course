@@ -22,26 +22,25 @@ import { Socket } from "phoenix";
 import { LiveSocket } from "phoenix_live_view";
 import topbar from "../vendor/topbar";
 
-import flatpickr from "../vendor/flatpickr";
+import Calendar from "./datePicker";
+import ValidatePhone from "./validatePhone";
 
-let Hooks = {};
+let Hooks = { Calendar, ValidatePhone };
 
-Hooks.Calendar = {
+Hooks.Clipboard = {
   mounted() {
-    this.pickr = flatpickr(this.el, {
-      inline: true,
-      mode: "range",
-      showMonths: 2,
-      disable: JSON.parse(this.el.dataset.unavailableDates),
-      onChange: selectedDates => {
-        if (selectedDates.length != 2) return;
+    const initialInnerHTML = this.el.innerHTML;
 
-        this.pushEvent("dates-picked", selectedDates);
-      },
+    this.el.addEventListener("click", () => {
+      const { content } = this.el.dataset;
+      navigator.clipboard.writeText(content);
+
+      this.el.innerHTML = "Copied!";
+
+      setTimeout(() => {
+        this.el.innerHTML = initialInnerHTML;
+      }, 2000);
     });
-  },
-  destroyed() {
-    this.pickr.destroy();
   },
 };
 

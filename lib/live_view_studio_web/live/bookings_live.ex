@@ -15,15 +15,12 @@ defmodule LiveViewStudioWeb.BookingsLive do
   def render(assigns) do
     ~H"""
     <h1>Bookings</h1>
+
     <div id="bookings">
       <div phx-update="ignore" id="wrapper">
-        <div
-          id="booking-calendar"
-          phx-hook="Calendar"
-          data-unavailable-dates={Jason.encode!(@bookings)}
-        >
-        </div>
+        <div id="booking-calendar" phx-hook="Calendar"></div>
       </div>
+      
       <div :if={@selected_dates} class="details">
         <div>
           <span class="date">
@@ -33,13 +30,16 @@ defmodule LiveViewStudioWeb.BookingsLive do
           <span class="date">
             <%= format_date(@selected_dates.to) %>
           </span>
+          
           <span class="nights">
             (<%= total_nights(@selected_dates) %> nights)
           </span>
         </div>
+        
         <div class="price">
           <%= total_price(@selected_dates) %>
         </div>
+        
         <button phx-click="book-selected-dates">
           Book Dates
         </button>
@@ -67,8 +67,13 @@ defmodule LiveViewStudioWeb.BookingsLive do
       socket
       |> assign(:bookings, [selected_dates | bookings])
       |> assign(:selected_dates, nil)
+      |> push_event("add-unavailable-dates", selected_dates)
 
     {:noreply, socket}
+  end
+
+  def handle_event("unavailable-dates", _, socket) do
+    {:reply, %{dates: socket.assigns.bookings}, socket}
   end
 
   def format_date(date) do
@@ -87,6 +92,9 @@ defmodule LiveViewStudioWeb.BookingsLive do
   end
 
   def parse_date(date_string) do
-    date_string |> Timex.parse!("{ISO:Extended}") |> Timex.to_date()
+    date_string
+    |> Timex.parse!("{ISO:Extended}")
+    |> Timex.Timezone.convert(:local)
+    |> Timex.to_date()
   end
 end

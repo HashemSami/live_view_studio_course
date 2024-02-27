@@ -38,6 +38,35 @@ defmodule LiveViewStudioWeb.DesksLive do
   end
 
   def handle_event("save", %{"desk" => params}, socket) do
+    # copy temp file priv/static/uploads/abc-1.png
+    # URL path will be: /uploads/abc-1.png
+
+    photo_locations =
+      consume_uploaded_entries(socket, :photos, fn meta, entry ->
+        IO.inspect(meta, label: "meta")
+        IO.inspect(entry, label: "entry")
+
+        # copy the photos the server destination
+        dest =
+          Path.join([
+            "priv",
+            "static",
+            "uploads",
+            "#{entry.uuid}-#{entry.client_name}"
+          ])
+
+        File.mkdir_p!(Path.dirname(dest))
+
+        File.cp!(meta.path, dest)
+
+        # get the url path of the copied files
+        url_path = static_path(socket, "/uploads/#{Path.basename(dest)}")
+
+        {:ok, url_path}
+      end)
+
+    params = Map.put(params, "photo_locations", photo_locations)
+
     case Desks.create_desk(params) do
       {:ok, _desk} ->
         changeset = Desks.change_desk(%Desk{})
@@ -55,4 +84,13 @@ defmodule LiveViewStudioWeb.DesksLive do
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do
     assign(socket, :form, to_form(changeset))
   end
+
+  defp error_to_string(:too_large),
+    do: "Gulp! File too large (max 10 MB)."
+
+  defp error_to_string(:too_many_files),
+    do: "Whoa, too many files."
+
+  defp error_to_string(:not_accepted),
+    do: "Sorry, that's not an acceptable file type."
 end
